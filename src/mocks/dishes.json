@@ -1,0 +1,27 @@
+{
+    "italian": [
+        "Lasagne","Pappardelle al cinghiale","Pasta Carbonara","Bistecca alla fiorentina","Risotto alla Milanese","Canederli","Amatriciana","Trofie al pesto"
+    ],
+    "indian": [
+        "Butter Garlic Naan","Tikka","Chole bhature","Tandoori chicken","Dal tadka","Masala dosa","Nihari","Panipuri","Misal"
+    ],
+    "japanese": [
+        "Tonkotsu ramen", "Kaisendon", "Otoro nigiri sushi", "Karē", "Nikuman", "Goma dare", "Sashimi", "Onigiri", "Yakitori", "Takoyaki"
+    ],
+    "french": [
+        "Steak Tartare","Escargots","Quiche Lorraine","Cassoulet","Onion soup","Ratatouille","Blanquette de veau"
+    ],
+    "thai": [
+        "Phanaeng Curry", "Roti canai","Tom kha gai","Pad Thai","Tom yum","Khao niao mamuang","Khao phat","Khanom khrok","Phat kaphrao"
+    ],
+    "mexican": [
+        "american", "Tacos","Esquites","Esquites","Chilaquiles","Chilorio","Antojitos","Sopa de lima","Guacamole","Quesadilla","Elote"
+    ],
+    "brazilian": [
+        "Picanha","Pão de queijo","Escondidinho","Vatapá","Arrumadinho","Tacacá","Tutu de feijão"
+    ],
+
+    "chinese": [
+        "Guotie","Dan Dan noodles","Crispy fried chicken","Roast suckling pig","Yangzhou fried rice","Sweet and sour spare ribs","Beef chow fun","Momo","Stir-fry shrimps","Latiaozi","Wonton","Kung pao chicken","Mapo doufu","Roast suckling pig"
+    ]
+}
