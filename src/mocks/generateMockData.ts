@@ -1,8 +1,12 @@
 import { Strapi } from '@strapi/strapi';
 import {seedUserExists, createSeedUser } from './mockUser'
-import { itemExists, createItem, getCuisine } from '../utils/dbUtils';
+import { createAddress, getDish, createRestaurant, createGetItem, createGetCuisine } from '../utils/dbUtils';
 import { clearData } from './mockUtils';
 import dishes from './dishes.json';
+import { EntityName } from '../../types/custom/db';
+import { getRandomInt } from '../utils/numberUtils';
+import { prepareAddressData, prepareCuisineCreate, prepareDishCreate } from '../utils/dbCustomUtils';
+
 
 const generateMockData = async (strapi: Strapi)=>{
 
@@ -22,16 +26,41 @@ const generateMockData = async (strapi: Strapi)=>{
         console.info('existing data has been cleaned!')
       }
     
-      console.log('generating seed data...')
-      
-      const bulkRestaurantPromises = [];
+    console.log('generating seed data...')
+    
+    const bulkRestaurantPromises = [];
 
-      const response = await fetch("http://overpass-api.de/api/interpreter?data=[out:json];area[place=city][\"name:en\"=\"London\"];node[amenity=restaurant](area);out;")
-      
+    // fetch data from overpass-api
+    const response = await fetch("http://overpass-api.de/api/interpreter?data=[out:json];area[place=city][\"name:en\"=\"London\"];node[amenity=restaurant](area);out;")
+    
     const restaurantData:any = await response.json();
 
-    restaurantData?.elements?.forEach(async (element)=> {
+    const bulkCuisinePromises = prepareCuisineCreate(strapi, restaurantData);
+    await Promise.all(bulkCuisinePromises)
+
+    const bulkDishPromises = prepareDishCreate(strapi, dishes);
+    await Promise.all(bulkDishPromises);
+
+    const restaurantMap = restaurantData?.elements.reduce((restaurantMap, restarantItem)=>{
+        if(restaurantMap[restarantItem?.tags?.name]){
+          const addressList = [...(restaurantMap[restarantItem?.tags?.name]?.addresses || []), prepareAddressData(restarantItem)]
+          restaurantMap[restarantItem?.tags?.name].addresses = addressList;
+        } else {
+          restaurantMap[restarantItem?.tags?.name] = restarantItem;
+          restaurantMap[restarantItem?.tags?.name].addresses = [prepareAddressData(restarantItem)];
+        }
+        return restaurantMap;
+      }, {})
+
+
+      Object.keys(restaurantMap).forEach(async (restaurantKey)=> {
+
+        const element = restaurantMap[restaurantKey];
         const cuisineIds = [];
+        const dishIds = []
+        const addresses = element.addresses;
+        const addressIds = [];
+
         if(element?.tags.cuisine && element?.tags?.name){
             //console.info('name', `${element?.tags?.name} (${element?.tags.cuisine})`)
 
@@ -39,43 +68,56 @@ const generateMockData = async (strapi: Strapi)=>{
 
             for(const cuisine of cuisineList) {
            
-              const cuisineId = await getCuisine(strapi, {name: cuisine});
+              const cuisineItem = await createGetCuisine(strapi, {name: cuisine});
 
-              cuisineIds.push(cuisineId)
+              cuisineIds.push(cuisineItem?.id)
+
+              const cuisineDishes = dishes[cuisine];
+              const randomDishId = getRandomInt(0, cuisineDishes?.length || 0);
+
+              const randomDishIds = [...new Set([1,2,3].map(()=>{
+                return getRandomInt(0, cuisineDishes?.length || 0);
+              }))]
+
+              randomDishIds.forEach(async (randomDishId)=>{
+                if(cuisineDishes?.[randomDishId]) {
+                  const dishId = await getDish(strapi, {name: cuisineDishes?.[randomDishId]});
+                  dishIds.push(dishId);
+                }
+              })
             };
-            //pupulate restaurant and cuisine if not present 
+            //populate restaurant and cuisine if not present 
             // split cuisine attribute by ; before insert it
             
-
             console.info('create restaurant with cuisines', cuisineIds)
       
             
-            const restaurantPromise = strapi.entityService.create('api::restaurant.restaurant', {
-                data: {
-                    latitude: element?.lat,
-                    longitude: element?.lon,
-                    name: element?.tags?.name,
-                    cuisines: cuisineIds
-                }
-              })
+            for(const address of addresses) {
+
+              const addressId = await createAddress(strapi, address);
+
+              addressIds.push(addressId);
+          
+            }
+
+            const restaurantPromise = createRestaurant(strapi,{
+              latitude: element?.lat,
+              longitude: element?.lon,
+              name: element?.tags?.name,
+              cuisines: {connect: cuisineIds},
+              dishes: {connect: dishIds},
+              addresses: {connect: addressIds}
+          });
+   
               
-              bulkRestaurantPromises.push(restaurantPromise)
+          bulkRestaurantPromises.push(restaurantPromise)
         }
     })
 
-    await Promise.all(bulkRestaurantPromises)
-
-/*
-      await Promise.all([
-      //  generateTodoData(strapi),
-        createSeedUser(strapi),
-      ]).catch(e => {
-        console.error('error during generating seed data! Stopping the application...')
-        throw new Error(e)
-      })*/
-    
-
-
+    await Promise.all(bulkRestaurantPromises).catch(e => {
+      console.error('error during generating seed data! Stopping the application...')
+      throw new Error(e)
+    })
 }
 
 export default generateMockData;

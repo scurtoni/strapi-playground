@@ -5,20 +5,33 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Strapi Develop",
+            "name": "Launch via NPM - start",
             "request": "launch",
             "runtimeArgs": [
-              "run-script",
-              "develop"
+              "run",
+              "start"
             ],
-            "sourceMaps": true,
             "runtimeExecutable": "npm",
-            // I have multiple folders in the workspace
-            "cwd": "${workspaceFolder}/backend",
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+            "type": "node",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "outFiles": [
+                "${workspaceFolder}/dist/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Program",
             "skipFiles": [
-              "<node_internals>/**"
+                "<node_internals>/**",
+                "${workspaceRoot}/node_modules/**/*.js",
             ],
-            "type": "node"
-          }
+            "program": "${workspaceRoot}/tasks/runner.js",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "outFiles": [
+                "${workspaceFolder}/dist/**/*.js"
+            ]
+        }
     ]
 }

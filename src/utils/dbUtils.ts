@@ -1,35 +1,110 @@
 import { Strapi } from "@strapi/strapi";
 
-export const itemExists = async (strapi: Strapi, entity: any, filterKey: string, filterValue: string) => {
 
-    const results = await strapi.entityService.findMany(entity, {
-        filters: { name: filterValue }
+enum EntityName {
+    Restaurant = "api::restaurant.restaurant",
+    Cuisine = "api::cuisine.cuisine",
+    Dish = "api::dish.dish"
+  }
+
+export const getItem = async (strapi: Strapi, entityName: EntityName, data: any, filters) => {
+
+    let items = await strapi.entityService.findMany(entityName, {
+        filters: filters
     })
-    return !!results?.length;   
+    return items.length ? items[0] : null;
 }
 
-export const createItem = async (strapi: Strapi, entity: any, data: any) => {
+export const createGetItem = async (strapi: Strapi, entityName: EntityName, data: any, filters: any) => {
 
-    const result = await strapi.entityService.create(entity, {
+    try {
+        let item = await getItem(strapi, entityName, data, filters)
+    if (item) {
+        return item;
+    } else {
+        //create item
+        const newItem = await strapi.entityService.create(entityName, {
+            data
+        })
+
+        return newItem;
+    }
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+export const createGetCuisine = async (strapi: Strapi, data: { name: string }) => {
+    return createGetItem(strapi, EntityName.Cuisine, data, data)
+}
+
+export const createRestaurant = (strapi: Strapi, data: any) => {
+    //create or return cousine
+   /* let restaurantItems = await strapi.entityService.findMany("api::restaurant.restaurant", {
+        filters: { name: data.name }
+    })
+    if (restaurantItems.length) {
+
+        const restaurantItem = restaurantItems[0];
+         
+        //update address list
+        return await strapi.entityService.update('api::restaurant.restaurant', restaurantItem.id, {
+            data: {
+              addresses: {
+                connect: [addressId]
+              },
+            },
+          });
+    } else {*/
+        //create restaurant
+       return strapi.entityService.create("api::restaurant.restaurant", {
+            data
+        })
+   // }
+
+}
+
+export const getDish = async (strapi: Strapi, data: { name: string }) => {
+
+   
+    return createGetItem(strapi, EntityName.Dish, data, { name: data.name });
+    
+    /*try {
+        //create or return cousine
+        let dishItems = await strapi.entityService.findMany("api::dish.dish", {
+            filters: { name: data.name }
+        })
+        if (dishItems.length) {
+            return dishItems[0].id;
+        } else {
+            //create item
+            const newCuisineItem = await strapi.entityService.create("api::dish.dish", {
+                data
+            })
+
+            return newCuisineItem.id;
+        }
+    } catch (e) {
+        console.error(e)
+    }*/
+}
+
+interface AddressData {
+    streetName: string;
+    streetNumber: string;
+    postalCode: string;
+    city: string;
+    latitude: number;
+    longitude: number;
+}
+export const createAddress = async (strapi: Strapi, data: AddressData) => {
+
+    //create item
+    const newCuisineItem = await strapi.entityService.create("api::address.address", {
         data
     })
 
-    return result;
-}
+    return newCuisineItem.id;
 
-export const getCuisine = async (strapi: Strapi, data: {name: string}) => {
-    let cuisineItems = await strapi.entityService.findMany("api::cuisine.cuisine", {
-        filters: { name: data.name }
-    })
-    if(cuisineItems.length){
-        return cuisineItems[0].id;
-    } else {
-        //create item
-        const newCuisineItem = await strapi.entityService.create("api::cuisine.cuisine", {
-            data
-        })
-    
-        return newCuisineItem.id;
-    }
-    
+
 }
